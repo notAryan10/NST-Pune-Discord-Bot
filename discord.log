@@ -1,2 +1,130 @@
-[2026-01-21 15:57:42] [INFO    ] discord.client: logging in using static token
-[2026-01-21 15:57:44] [INFO    ] discord.gateway: Shard ID None has connected to Gateway (Session ID: 64074e296bde61d1d8d31d763a41f59a).
+[2026-01-21 17:26:21] [INFO    ] discord.client: logging in using static token
+[2026-01-21 17:26:24] [INFO    ] discord.gateway: Shard ID None has connected to Gateway (Session ID: d48e14b5de76363ece32fea43874aad3).
+[2026-01-21 18:12:35] [ERROR   ] discord.client: Attempting a reconnect in 1.03s
+Traceback (most recent call last):
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1562, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1178, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1209, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 856, in getaddrinfo
+    return await self.run_in_executor(
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/thread.py", line 52, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/socket.py", line 953, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/client.py", line 724, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/tasks.py", line 481, in wait_for
+    return fut.result()
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/gateway.py", line 383, in from_client
+    socket = await client.http.ws_connect(str(url))
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/http.py", line 566, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 1076, in _ws_connect
+    resp = await self.request(
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 779, in _request
+    resp = await handler(req)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 734, in _connect_and_send_request
+    conn = await self._connector.connect(
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 672, in connect
+    proto = await self._create_connection(req, traces, timeout)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1239, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1568, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-d.discord.gg:443 ssl:default [nodename nor servname provided, or not known]
+[2026-01-21 18:12:36] [ERROR   ] discord.client: Attempting a reconnect in 1.82s
+Traceback (most recent call last):
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1562, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1178, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1209, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 856, in getaddrinfo
+    return await self.run_in_executor(
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/thread.py", line 52, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/socket.py", line 953, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/client.py", line 724, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/tasks.py", line 481, in wait_for
+    return fut.result()
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/gateway.py", line 383, in from_client
+    socket = await client.http.ws_connect(str(url))
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/http.py", line 566, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 1076, in _ws_connect
+    resp = await self.request(
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 779, in _request
+    resp = await handler(req)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 734, in _connect_and_send_request
+    conn = await self._connector.connect(
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 672, in connect
+    proto = await self._create_connection(req, traces, timeout)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1239, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1568, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-d.discord.gg:443 ssl:default [nodename nor servname provided, or not known]
+[2026-01-21 18:12:38] [ERROR   ] discord.client: Attempting a reconnect in 6.56s
+Traceback (most recent call last):
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1562, in _create_direct_connection
+    hosts = await self._resolve_host(host, port, traces=traces)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1178, in _resolve_host
+    return await asyncio.shield(resolved_host_task)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1209, in _resolve_host_with_throttle
+    addrs = await self._resolver.resolve(host, port, family=self._family)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/resolver.py", line 40, in resolve
+    infos = await self._loop.getaddrinfo(
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py", line 856, in getaddrinfo
+    return await self.run_in_executor(
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/thread.py", line 52, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/socket.py", line 953, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/client.py", line 724, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/tasks.py", line 481, in wait_for
+    return fut.result()
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/gateway.py", line 383, in from_client
+    socket = await client.http.ws_connect(str(url))
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/discord/http.py", line 566, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 1076, in _ws_connect
+    resp = await self.request(
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 779, in _request
+    resp = await handler(req)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/client.py", line 734, in _connect_and_send_request
+    conn = await self._connector.connect(
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 672, in connect
+    proto = await self._create_connection(req, traces, timeout)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1239, in _create_connection
+    _, proto = await self._create_direct_connection(req, traces, timeout)
+  File "/Users/aryanverma/Library/Python/3.9/lib/python/site-packages/aiohttp/connector.py", line 1568, in _create_direct_connection
+    raise ClientConnectorDNSError(req.connection_key, exc) from exc
+aiohttp.client_exceptions.ClientConnectorDNSError: Cannot connect to host gateway-us-east1-d.discord.gg:443 ssl:default [nodename nor servname provided, or not known]
+[2026-01-21 18:12:46] [INFO    ] discord.gateway: Shard ID None session has been invalidated.
+[2026-01-21 18:12:53] [INFO    ] discord.gateway: Shard ID None has connected to Gateway (Session ID: 3a8f321499eef1ce55faeb2a0d97ef3b).

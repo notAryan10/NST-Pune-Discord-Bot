@@ -5,11 +5,15 @@ from dotenv import load_dotenv
 import os
 import aiofiles
 import uuid
+from pymongo import MongoClient
+from datetime import datetime
+
 
 load_dotenv()
-token = os.getenv('DISCORD_TOKEN')
+token = os.getenv("DISCORD_TOKEN")
+mongo_uri = os.getenv("MONGO_URI")
 
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -18,6 +22,8 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 BAD_WORDS = ["shit", "fuck"]
+allowed_extensions = ["pdf", "png"]
+
 
 UNVERIFIED_ROLE = "Unverified"
 CONFIRMED_ROLE = "Confirmed Student"
@@ -26,10 +32,21 @@ UPLOAD_FOLDER = "uploads"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+mongo_client = MongoClient(mongo_uri)
+db = mongo_client["nst_bot"]
+verifications = db["verifications"]
+
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("Bot is online and ready")
+
+@bot.event
+async def on_member_join(member):
+    role = discord.utils.get(member.guild.roles, name=UNVERIFIED_ROLE)
+    if role:
+        await member.add_roles(role)
 
 @bot.event
 async def on_message(message):
@@ -37,18 +54,17 @@ async def on_message(message):
         return
 
     msg = message.content.lower()
-
     for word in BAD_WORDS:
         if word in msg:
             await message.delete()
-            await message.channel.send(f"{message.author.mention} Please avoid using inappropriate language.")
-            return 
+            await message.channel.send(f"{message.author.mention} ⚠️ Please avoid inappropriate language.")
+            return
     await bot.process_commands(message)
 
 
 @bot.command()
 async def ping(ctx):
-    await ctx.send("🏓 Pong! Bot is working.")
+    await ctx.send("Pong! Bot is working.")
 
 @bot.command()
 async def test(ctx, *, arg):
@@ -57,19 +73,6 @@ async def test(ctx, *, arg):
 @bot.command()
 async def add(ctx, a: int, b: int):
     await ctx.send(f"Result: {a + b}")
-
-@bot.command()
-@commands.has_permissions(manage_roles=True)
-async def mute(ctx, member: discord.Member):
-    role = discord.utils.get(ctx.guild.roles, name="Muted")
-    if role:
-        await member.add_roles(role)
-        await ctx.send(f"{member.mention} has been muted.")
-
-@bot.command()
-async def applyclub(ctx, club_name):
-    await ctx.send(f"Your request to join **{club_name}** has been sent to coordinators.")
-
 
 @bot.command()
 async def verify(ctx):
@@ -87,56 +90,98 @@ async def verify(ctx):
         await ctx.send("⚠️ You cannot use this command.")
         return
 
+    existing = verifications.find_one({"user_id": str(user.id), "status": "pending"})
+    if existing:
+        await ctx.send("⏳ You already have a pending verification request.")
+        return
+
     if not ctx.message.attachments:
-        await ctx.send("📎 Please upload your signed Newton document with this command.\nExample:\n`!verify` + attach file")
+        await ctx.send(
+            "📎 Please upload your signed Newton document.\n"
+            "Accepted formats: **PDF, PNG**\n"
+            "Example:\n`!verify` + attach file"
+        )
         return
 
     attachment = ctx.message.attachments[0]
+    filename = attachment.filename.lower()
 
-    ext = attachment.filename.split(".")[-1]
-    filename = f"{user.id}_{uuid.uuid4().hex}.{ext}"
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    allowed_extensions = ["pdf", "png"]
+    ext = filename.split(".")[-1]
 
-    async with aiofiles.open(filepath, "wb") as f:
-        await f.write(await attachment.read())
+    if ext not in allowed_extensions:
+        await ctx.send(
+            "❌ Invalid file format.\n"
+            "Accepted formats: **PDF (.pdf)** or **PNG (.png)** only."
+        )
+        return
 
     queue_channel = discord.utils.get(guild.text_channels, name=VERIFICATION_CHANNEL)
 
-    if queue_channel:
-        embed = discord.Embed(
-            title="📝 New Verification Submission",
-            description=(
-                f"User: {user.mention}\n"
-                f"ID: `{user.id}`\n"
-                f"File: `{filename}`"
-            ),
-            color=discord.Color.gold()
-        )
-        embed.set_footer(text="Use !approve @user or !reject @user")
+    if not queue_channel:
+        await ctx.send("❌ Verification system misconfigured. Contact admin.")
+        return
 
-        file = discord.File(filepath)
-        await queue_channel.send(embed=embed, file=file)
+    embed = discord.Embed(
+        title="📝 New Verification Submission",
+        description=(
+            f"👤 User: {user.mention}\n"
+            f"🆔 ID: `{user.id}`\n"
+            f"📂 File: `{attachment.filename}`"
+        ),
+        color=discord.Color.gold()
+    )
+    embed.set_footer(text="Use !approve @user or !reject @user")
 
-    await ctx.send("📨 Your document has been submitted for verification. Please wait for admin approval.")
+    msg = await queue_channel.send(embed=embed)
+    await queue_channel.send(file=await attachment.to_file())
 
+    record = {
+        "user_id": str(user.id),
+        "username": str(user),
+        "file_url": attachment.url,
+        "file_name": attachment.filename,
+        "file_type": ext,
+        "status": "pending",
+        "submitted_at": datetime.utcnow(),
+        "reviewed_at": None,
+        "reviewed_by": None,
+        "reason": None,
+        "queue_message_id": str(msg.id)
+    }
+
+    verifications.insert_one(record)
+
+    await ctx.send("📨 Your document has been submitted for verification.")
 
 @bot.command()
 @commands.has_permissions(manage_roles=True)
 async def approve(ctx, member: discord.Member):
     guild = ctx.guild
 
+    record = verifications.find_one({"user_id": str(member.id), "status": "pending"})
+    if not record:
+        await ctx.send("No pending verification found for this user.")
+        return
+
     unverified = discord.utils.get(guild.roles, name=UNVERIFIED_ROLE)
     confirmed = discord.utils.get(guild.roles, name=CONFIRMED_ROLE)
-
-    if confirmed in member.roles:
-        await ctx.send("This user is already verified.")
-        return
 
     await member.add_roles(confirmed)
     if unverified in member.roles:
         await member.remove_roles(unverified)
 
+    verifications.update_one(
+        {"_id": record["_id"]},
+        {"$set": {
+            "status": "approved",
+            "reviewed_at": datetime.utcnow(),
+            "reviewed_by": str(ctx.author.id)
+        }}
+    )
+
     await ctx.send(f"{member.mention} has been verified!")
+
     try:
         await member.send("🎉 Your NST verification is approved! Welcome aboard.")
     except:
@@ -145,14 +190,29 @@ async def approve(ctx, member: discord.Member):
 @bot.command()
 @commands.has_permissions(manage_roles=True)
 async def reject(ctx, member: discord.Member, *, reason="No reason provided"):
-    unverified = discord.utils.get(ctx.guild.roles, name=UNVERIFIED_ROLE)
+    record = verifications.find_one({"user_id": str(member.id), "status": "pending"})
+    if not record:
+        await ctx.send("No pending verification found for this user.")
+        return
 
-    await ctx.send(f"{member.mention}'s verification was rejected.")
+    verifications.update_one(
+        {"_id": record["_id"]},
+        {"$set": {
+            "status": "rejected",
+            "reviewed_at": datetime.utcnow(),
+            "reviewed_by": str(ctx.author.id),
+            "reason": reason
+        }}
+    )
+
+    await ctx.send(f"❌ {member.mention}'s verification was rejected.")
+
     try:
-        await member.send(f"Your NST verification was rejected.\nReason: {reason}")
+        await member.send(
+            f"Your NST verification was rejected.\nReason: {reason}"
+        )
     except:
         pass
-
 
 
 bot.run(token, log_handler=handler, log_level=logging.INFO)
