@@ -23,6 +23,8 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 BAD_WORDS = ["shit", "fuck"]
 allowed_extensions = ["pdf", "png"]
+YEAR_ROLES = ["Freshers", "2nd Year", "3rd Year", "4th Year"]
+CURRENT_YEAR = 2026
 
 
 UNVERIFIED_ROLE = "Unverified"
@@ -61,6 +63,13 @@ async def on_message(message):
             return
     await bot.process_commands(message)
 
+
+def get_current_academic_year():
+    now = datetime.now()
+    if now.month >= 7:
+        return now.year
+    else:
+        return now.year - 1
 
 @bot.command()
 async def ping(ctx):
@@ -213,6 +222,125 @@ async def reject(ctx, member: discord.Member, *, reason="No reason provided"):
         )
     except:
         pass
+
+
+@bot.command()
+async def batch(ctx):
+    guild = ctx.guild
+    user = ctx.author
+
+    confirmed = discord.utils.get(guild.roles, name=CONFIRMED_ROLE)
+
+    if confirmed not in user.roles:
+        await ctx.send("You must be verified before setting your batch.")
+        return
+
+    existing = db["batches"].find_one({"user_id": str(user.id)})
+    if existing:
+        await ctx.send(
+            f"🔒 You already submitted your batch info.\n"
+            f"Assigned role: **{existing['assigned_role']}**\n"
+            "Contact admin if incorrect."
+        )
+        return
+
+    await ctx.send("📝 Please enter your **Full Name**:")
+
+    def check_name(m):
+        return m.author == user and m.channel == ctx.channel
+
+    try:
+        name_msg = await bot.wait_for("message", timeout=60.0, check=check_name)
+    except:
+        await ctx.send("⏳ Timed out. Please run `!batch` again.")
+        return
+
+    full_name = name_msg.content.strip()
+
+    await ctx.send("🔢 Now enter your **URN Number** (e.g. `2024-B-123456789B`):")
+
+    def check_urn(m):
+        return m.author == user and m.channel == ctx.channel
+
+    try:
+        urn_msg = await bot.wait_for("message", timeout=60.0, check=check_urn)
+    except:
+        await ctx.send("⏳ Timed out. Please run `!batch` again.")
+        return
+
+    urn = urn_msg.content.strip().upper()
+
+    if len(urn) < 6 or not urn[:4].isdigit():
+        await ctx.send("❌ Invalid URN format.\nExpected format: `2024-B-XXXXXXXX`")
+        return
+
+    admission_year = int(urn[:4])
+
+    current_academic_year = get_current_academic_year()
+    academic_year_number = current_academic_year - admission_year + 1
+
+    year_map = {
+        1: "Freshers",
+        2: "2nd Year",
+        3: "3rd Year",
+        4: "4th Year"
+    }
+
+    if academic_year_number not in year_map:
+        await ctx.send(
+            "Your URN does not map to a valid academic year.\n"
+            "Contact admin for manual review."
+        )
+        return
+
+    role_name = year_map[academic_year_number]
+    role = discord.utils.get(guild.roles, name=role_name)
+
+    if not role:
+        await ctx.send("❌ Year role not found. Contact Admin.")
+        return
+
+    await user.add_roles(role)
+
+    db["batches"].insert_one({
+        "user_id": str(user.id),
+        "name": full_name,
+        "urn": urn,
+        "admission_year": admission_year,
+        "academic_year_number": academic_year_number,
+        "assigned_role": role_name,
+        "submitted_at": datetime.utcnow()
+    })
+
+    await ctx.send(
+        f"✅ Batch verified!\n"
+        f"👤 Name: **{full_name}**\n"
+        f"🎓 Admission Year: **{admission_year}**\n"
+        f"📆 Current Academic Year: **{current_academic_year}**\n"
+        f"📌 Assigned Role: **{role_name}**\n\n"
+        "🔒 This cannot be changed. Contact Admin if incorrect."
+    )
+
+@bot.event
+async def on_member_update(before, after):
+    before_roles = {r.name for r in before.roles}
+    after_roles = {r.name for r in after.roles}
+
+    added_roles = after_roles - before_roles
+    year_roles = set(YEAR_ROLES)
+
+    if added_roles & year_roles:
+        if before_roles & year_roles:
+            new_role = list(added_roles & year_roles)[0]
+            role_obj = discord.utils.get(after.guild.roles, name=new_role)
+            if role_obj:
+                await after.remove_roles(role_obj)
+
+            try:
+                await after.send(
+                    "🔒 Year roles are locked. Contact Admin for changes.")
+            except:
+                pass
 
 
 bot.run(token, log_handler=handler, log_level=logging.INFO)
