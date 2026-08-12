@@ -1,5 +1,5 @@
 discord.py
 python-dotenv
-aiofiles
+aiohttp
 pymongo
 dnspython
