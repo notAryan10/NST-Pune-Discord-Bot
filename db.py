@@ -8,3 +8,5 @@ db = client["nst_bot"]
 
 verifications = db["verifications"]
 batches = db["batches"]
+roster = db["roster"]  # official name/URN list, populated by scripts/import_roster.py
+verify_attempts = db["verify_attempts"]  # failed-attempt counters and lockouts
