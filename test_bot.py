@@ -5,7 +5,9 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import assistant
+import config
 import main
+import roster
 from cogs import batch, helpdesk
 
 
@@ -167,6 +169,60 @@ def test_mention_stripping():
         asyncio.run(cog.handle_mention(msg))
 
     assert asked == ["how do I verify?"] * 3, asked
+
+
+# --- roster matching --------------------------------------------------------
+
+def _row(name, tokens=None):
+    key = roster.normalize_name(name)
+    return {"name": name, "name_key": key, "name_tokens": tokens or len(key.split())}
+
+
+def test_urn_normalization_is_forgiving():
+    """However a student types it, it has to reach the same key the importer wrote."""
+    canonical = roster.normalize_urn("2024-B-13072005B")
+    for typed in ("2024-b-13072005b", "2024 B 13072005 B", "2024B13072005B"):
+        assert roster.normalize_urn(typed) == canonical, typed
+
+
+def test_urn_shape_is_checked_before_the_database():
+    assert roster.looks_like_urn("2024-B-13072005B")
+    assert roster.looks_like_urn("2024-B-26102005"), "suffix is optional"
+    for bad in ("", "hello", "2024-B-123", "24-B-13072005B"):
+        assert not roster.looks_like_urn(bad), bad
+
+
+def test_name_scoring_tolerates_real_variation():
+    row = _row("Manthan Subhash Ziman")
+    assert roster.score_name("Manthan Subhash Ziman", row) == 100
+    assert roster.score_name("manthan  subhash ziman", row) == 100, "case and spacing"
+    assert roster.score_name("Ziman Manthan Subhash", row) == 100, "word order"
+    assert roster.score_name("Priyank Gaur", row) < config.NAME_MATCH_REVIEW
+
+
+def test_single_word_names_never_auto_approve_on_a_fuzzy_match():
+    """'Neha' vs 'Neel' scores high but they are two different students."""
+    row = _row("Neha")
+    assert roster.decide(roster.score_name("Neha", row), row) == roster.AUTO
+    assert roster.decide(89, row) != roster.AUTO
+
+
+def test_decide_thresholds():
+    row = _row("Priyank Gaur")
+    assert roster.decide(100, row) == roster.AUTO
+    assert roster.decide(config.NAME_MATCH_AUTO, row) == roster.AUTO
+    assert roster.decide(config.NAME_MATCH_AUTO - 1, row) == roster.REVIEW
+    assert roster.decide(config.NAME_MATCH_REVIEW - 1, row) == roster.REJECT
+
+
+def test_suggest_only_mode_never_auto_approves():
+    row = _row("Priyank Gaur")
+    original = config.ROSTER_AUTO_APPROVE
+    try:
+        config.ROSTER_AUTO_APPROVE = False
+        assert roster.decide(100, row) == roster.REVIEW
+    finally:
+        config.ROSTER_AUTO_APPROVE = original
 
 
 # --- wiring -----------------------------------------------------------------

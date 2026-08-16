@@ -3,3 +3,5 @@ python-dotenv
 aiohttp
 pymongo
 dnspython
+rapidfuzz
+pdfplumber  # scripts/import_roster.py only, not needed at runtime

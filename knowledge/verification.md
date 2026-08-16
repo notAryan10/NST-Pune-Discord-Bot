@@ -4,66 +4,62 @@
 This document describes the verification workflow implemented by NST-Bot for the NST Discord server.
 
 ## New member
-When a member joins the server, NST-Bot attempts to assign the `Unverified` role.
+When a member joins the server, NST-Bot assigns the `Unverified` role. A member with the `Unverified` role is not yet a confirmed student.
 
-A member with the `Unverified` role is not considered a confirmed student on the server.
-
-## Document verification
-A user can submit a verification document using:
+## How a student verifies
+A student runs this command in the server:
 
 `!verify`
 
-The command expects an attachment.
+NST-Bot then continues the conversation **in DMs**, because a URN contains the student's date of birth and should not be typed into a public channel.
 
-### Accepted formats
-- PDF (`.pdf`)
-- PNG (`.png`)
+In DMs the bot asks for two things:
+1. The student's **URN** (for example `2024-B-13072005B`)
+2. The student's **full name**, as the college has it
 
-The bot checks:
-- The user is not already `Confirmed Student`.
-- The user currently has the `Unverified` role.
-- The user does not already have a pending verification request.
-- The submitted file has an allowed extension.
-- The verification queue channel exists.
+The bot checks both against the official student list imported from the college roster.
 
-The submission is posted to the configured `verification-queue` channel and stored in MongoDB.
+If the bot cannot DM the student, verification cannot proceed. The student needs to enable **Settings → Privacy → Direct Messages** for this server and run `!verify` again.
 
-The `verification-queue` channel is **admin-only**. Students cannot see it and cannot check their status there. After submitting, a student simply waits for the DM telling them whether they were approved or rejected.
+## What happens next
+- **Name matches the roster** — the student is verified immediately. `Confirmed Student` is assigned, `Unverified` is removed, and the correct year role is assigned automatically.
+- **Name is close but not certain** — the request goes to admins for review. The student gets a DM once it is decided.
+- **Name does not match** — the student is asked to check their spelling and try again.
+- **URN is not on the roster** — the student should check their ID card, and contact an admin if the URN is definitely correct.
+
+Because the year role is assigned from the roster, a verified student does **not** need to run `!batch` afterwards.
+
+## One account per student
+Each URN can only ever verify one Discord account. If a URN has already been used, the bot refuses and notifies an admin. A student who has genuinely lost access to their old account should contact an admin.
+
+## Attempt limits
+Repeated failed attempts temporarily lock a student out of verification. This protects other students, since URNs follow a predictable pattern. A locked-out student can try again later or contact an admin.
 
 ## Verification statuses
-A verification record can have statuses such as:
-- `pending`
+A verification record can have these statuses:
+- `pending` — waiting for an admin to review
 - `approved`
 - `rejected`
 
-## Approval
-Authorized moderators can use:
+## Admin commands
+Authorized moderators review anything the bot was not confident about:
 
 `!approve @user`
 
-On approval:
-- `Confirmed Student` is assigned.
-- `Unverified` is removed.
-- The MongoDB record is marked approved.
-- The reviewer and review time are recorded.
-- The user receives a confirmation DM when possible.
-
-## Rejection
-Authorized moderators can use:
-
 `!reject @user [reason]`
 
-On rejection:
-- The MongoDB record is marked rejected.
-- The reviewer, review time, and reason are stored.
-- The user receives a DM when possible.
+On approval the student gets their roles and a confirmation DM. On rejection the reason is stored and DMed to the student. The reviewer and the review time are recorded either way.
+
+The `verification-queue` channel is **admin-only**. Students cannot see it and cannot check their status there — they simply wait for the DM.
 
 ## Important privacy rule
-Verification documents and personal information are sensitive. NST-Bot should not expose another student's submitted document, URN, or verification record through the AI assistant.
+Verification documents and personal information are sensitive. NST-Bot must not expose another student's URN, name, or verification record through the AI assistant.
 
 If a student asks about their own verification status, the bot may use their Discord ID to check their own record.
 
 If a student asks about somebody else's verification, the bot should refuse and direct them to an administrator.
+
+The bot must never reveal the name attached to a URN. A student who submits a URN that is not theirs is told only that the name did not match.
 
 ## AI assistant behavior
 The AI assistant must never approve or reject a verification request on its own. Approval and rejection remain explicit administrator commands.
