@@ -22,10 +22,16 @@ import db
 #                     date of birth as DDMMYYYY, and sometimes a trailing letter for
 #                     students who share a birthday.
 #   E25B070959        2025 onward: an E marker, two-digit admission year, campus
-#                     letter, and a plain serial. No date of birth in this one.
+#                     letter, a two-digit programme code, and a serial. No date of
+#                     birth in this one.
+#   E26B07F0799       2026 adds a stream letter between the programme code and the
+#                     serial, so that block is optional rather than a third pattern.
 URN_PATTERNS = (
     re.compile(r"^(?P<year>\d{4})-(?P<campus>[A-Z])-(?P<dob>\d{8})(?P<suffix>[A-Z]?)$"),
-    re.compile(r"^E(?P<yy>\d{2})(?P<campus>[A-Z])(?P<serial>\d{6})$"),
+    re.compile(
+        r"^E(?P<yy>\d{2})(?P<campus>[A-Z])(?P<programme>\d{2})"
+        r"(?P<stream>[A-Z]?)(?P<serial>\d{4})$"
+    ),
 )
 
 AUTO, REVIEW, REJECT = "auto", "review", "reject"
