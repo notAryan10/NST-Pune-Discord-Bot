@@ -188,8 +188,24 @@ def test_urn_normalization_is_forgiving():
 def test_urn_shape_is_checked_before_the_database():
     assert roster.looks_like_urn("2024-B-13072005B")
     assert roster.looks_like_urn("2024-B-26102005"), "suffix is optional"
-    for bad in ("", "hello", "2024-B-123", "24-B-13072005B"):
+    for bad in ("", "hello", "2024-B-123", "24-B-13072005B", "E26B07FF799"):
         assert not roster.looks_like_urn(bad), bad
+
+
+def test_all_three_urn_schemes_yield_their_admission_year():
+    """The year drives the year role, so every scheme has to surrender it."""
+    assert roster.parse_urn("2024-B-13072005B") == 2024  # founding batch, DOB inside
+    assert roster.parse_urn("E25B070959") == 2025  # no stream letter
+    assert roster.parse_urn("E25B000924") == 2025  # programme code is not always 07
+    assert roster.parse_urn("E26B07F0799") == 2026  # stream letter present
+
+
+def test_admission_year_maps_to_the_right_year_role():
+    """Guards the mapping every cohort currently in the roster depends on."""
+    august_2026 = datetime(2026, 8, 1, tzinfo=timezone.utc)
+    assert batch.year_role_for(2026, august_2026) == "Freshers"
+    assert batch.year_role_for(2025, august_2026) == "2nd Year"
+    assert batch.year_role_for(2024, august_2026) == "3rd Year"
 
 
 def test_name_scoring_tolerates_real_variation():
